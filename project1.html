@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mendy's Cryptonite Project</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css"
+        integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500&display=swap" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"
+        integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"
+        integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN"
+        crossorigin="anonymous"></script>
+
+    <link rel="stylesheet" href="custom.css">
+    <link rel="stylesheet" href="html.css">
+    <style>
+        /* 2 files 
+ custom.css
+ html.css
+  */
+    </style>
+</head>
+
+<body class="mainBody">
+    <!-- title -->
+
+    <div id="myTitle" class="badge ">
+        <p id="titleCryp">cryptonite</p><img id="crypPic" src="logo.jpg">
+    </div>
+
+    <div id="wrapDiv">
+        <!-- spin loader -->
+        <div class="loader"></div>
+
+        <!-- modal popup -->
+        <button type="button" id="modalBtn" style="display: none;" class="btn btn-primary" data-toggle="modal"
+            data-target="#exampleModalCenter">
+        </button>
+        <div class="modal" id="mymodal" tabindex="-1" role="dialog" aria-labelledby="mymodal" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered" id="modaldialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="exampleModalLongTitle">Selected Coins - Please select one coin to
+                            remove</h5>
+                    </div>
+                    <br>
+                    <div class="modal-body">
+                        <div id="modalbody" class="row"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" id="keepcurrent" class="close modalbtn" data-dismiss="modal"
+                            aria-label="Close">don't wanna change
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="container-fluid" id="firstCon">
+            <!-- navbar and search -->
+            <div class="container ">
+                <div id="header" class="row m-3">
+                    <div id="menu">
+                        <ul class="nav nav-pills btn-secondary">
+                            <li class="nav-item ">
+                                <a class="nav-link active btn btn-secondary" id="home" href="#"
+                                    onclick="moveToPage('home')">Home</a>
+                            </li>
+                            <li class="nav-item ">
+                                <a class="nav-link btn btn-secondary" id="liveReport" href="#"
+                                    onclick="moveToPage('liveReport')">Live reports</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link btn btn-secondary" id="about" href="#"
+                                    onclick="moveToPage('about')">About</a>
+                            </li>
+                            <li class="nav-item" style="display: none;">
+                                <a class="nav-link btn btn-secondary" id="about" href="#"
+                                    onclick="moveToPage('selected')">About</a>
+                            </li>
+                        </ul>
+                    </div>
+                    <div id="searchFiled" class="row ">
+                        <div class="form-group m-1">
+                            <input type="text" class="form-control" id="searchInput" aria-describedby="emailHelp">
+                        </div>
+                        <div class="col m-1">
+                            <button type="button" onclick="searchCoin()" class="btn btn-secondary">SEARCH</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- dynemic divs to show -->
+            <div class="container">
+                <div class="row m-1 allDivs m-3 " id="homeDiv"></div>
+                <div class="row m-1 allDivs m-3" id="liveReportDiv">
+                    <div id="chartContainer"> </div>
+                </div>
+                <div class="m-1 allDivs m-3" id="aboutDiv"></div>
+                <div class="row m-1 allDivs m-3 " id="selectedDiv"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let data
+        let chartArr = []
+        let coins = []
+        let str = ""
+        let inputValue = ""
+        let selectedArray = []
+        let selectedCoinIdx
+        let selectedSymbolArray = []
+        let arrCoinRealTime1 = [];
+        let arrCoinRealTime2 = [];
+        let arrCoinRealTime3 = [];
+        let arrCoinRealTime4 = [];
+        let arrCoinRealTime5 = [];
+        let arrCoinRealTimeName = [];
+        let theInterval
+        let allCoinsUrl = "https://api.coingecko.com/api/v3/coins/"
+        let selectedCoinUrl = `https://api.coingecko.com/api/v3/coins/${inputValue}`
+
+
+        //ajax for cards
+        showCards = async (url, status) => {
+            $(".loader").show();
+            await $.ajax({
+                type: 'GET',
+                datatype: 'json',
+                url: url,
+                success: function (data) {
+                    $(".loader").hide();
+                    if (status == 2) {
+                        createCard(data)
+                        console.log(data)
+                    } else {
+                        coins = data.slice(0, 50);
+                        printCards()
+                        console.log(coins)
+                    };
+                },
+                error: function (error) {
+                    console.log("error : ", error);
+                }
+            });
+        }
+        showCards(allCoinsUrl, 1)
+
+        //print all cards
+        printCards = () => {
+            str = ""
+            coins.map(coin => {
+                createCard(coin, 1);
+            })
+            homeDiv.innerHTML = str
+            moveToPage("home")
+        }
+
+        //create card for MAP
+        createCard = (coin, v) => {
+
+            str += `<div class="p-1 " id="${coin.id}0">`;
+            str += `<div class="card" style="width: 18rem;">`;
+            str += `<div class="card-body">`;
+            str += `<div class="custom-control custom-switch switch">`
+            str += `<input type="checkbox" class="custom-control-input " onclick="ckb(this,'${coin.id}')" id="${coin.symbol}"><span class="slider round" id=""></span>`
+            str += `<label class="custom-control-label switch" for="${coin.symbol}"></label></div>`
+            str += `<h5 class="card-title">${coin.symbol}</h5>`;
+            str += `<p class="card-title" id="${coin.id}1">${coin.name}</p>`;
+            str += `<button class="btn btn-dark " id="moreInfoBTN${coin.id}" type="button" onclick="moreInfoBTN('${coin.id}')" data-toggle="collapse" data-target="#${coin.id}currencies" aria-expanded="false" aria-controls="collapseExample">More Info</button>`
+            str += `<p class="card-title details" id="${coin.id}currencies"></p>`;
+            str += `</div></div></div>`;
+
+        };
+
+        //info from ajax and cache
+        moreInfoBTN = (coinId) => {
+
+            console.log(coinId, " info");
+            $(".loader").show();
+            let realTime = Date.now();
+            let backUpCoin = JSON.parse(localStorage.getItem(coinId));
+            if (backUpCoin != null && (realTime - backUpCoin.time) < 120000) {
+                currencyFromLocal = () => {
+                    console.log("from local");
+                    $(".loader").hide();
+                    console.log(backUpCoin, " local");
+                    $(`#${coinId}currencies`).html(`
+                        <img class="currencyImg" src="${backUpCoin.image.small}">
+                        USD : ${backUpCoin.market_data.current_price.usd} <br>
+                        EUR : ${backUpCoin.market_data.current_price.eur}<br>
+                        ILS : ${backUpCoin.market_data.current_price.ils}<br>
+                        `)
+                }
+                currencyFromLocal()
+            } else {
+                console.log("from Ajax");
+                $.ajax({
+                    type: "GET",
+                    datatype: 'json',
+                    url: `https://api.coingecko.com/api/v3/coins/${coinId}`,
+                    beforeSend: function () {
+                        $(".loader").show();
+                    },
+                    success: function (data) {
+
+                        currencyFromAjax(data)
+                    },
+                    error: function (error) {
+                        console.log("error : ", error);
+                    }
+                })
+                currencyFromAjax = (coin) => {
+                    $(".loader").hide();
+                    console.log(coin, " ajax");
+                    console.log(coin.id, " ajax id");
+                    $(`#${coin.id}currencies.details`).html(`
+                        <img class="currencyImg" src="${coin.image.small}">
+                        USD : ${coin.market_data.current_price.usd} <br>
+                        EUR : ${coin.market_data.current_price.eur}<br>
+                        ILS : ${coin.market_data.current_price.ils}<br>
+                        `)
+                    coin.time = Date.now();
+                    localStorage.setItem(`${coin.id}`, JSON.stringify(coin));
+                }
+
+            }
+        }
+
+        //toogle events
+        ckb = (currentToggle, coinId) => {
+            console.log("name ", coinId)
+            var ToggleId = currentToggle.id;
+            console.log("ToggleId: ", ToggleId)
+            let indexSymbolCoin = selectedArray.indexOf(coinId);
+            let indexIdToggleLive = selectedSymbolArray.indexOf(ToggleId);
+            console.log("indexSymbolCoin: ", indexSymbolCoin)
+            console.log("indexSymbol *1: ", (indexSymbolCoin != -1))
+            if (indexSymbolCoin != -1) {
+                selectedArray.splice(indexSymbolCoin, 1);
+                updateCoinSpan();
+                selectedSymbolArray.splice(indexIdToggleLive, 1);
+            } else {
+
+                if (selectedArray.length < 5) {
+                    selectedArray.push(coinId);
+                    updateCoinSpan();
+                    selectedSymbolArray.push(ToggleId);
+                } else {
+                    console.log("myking");
+                    $("#modalbody").empty();
+                    $(`#${ToggleId}`).prop('checked', false);
+
+                    $("#modalbody").html('To add the "<b>' + coinId + '</b>" coin, you must unselect one of the following: ');
+                    $("#mymodal").css("display", "block");
+
+                    $("#keepcurrent").on("click", () => {
+                        $("#mymodal").css("display", "none");
+                    });
+
+                    let counterId = 1;
+                    let str = ""
+                    selectedSymbolArray.map((coin, i) => {
+                        counter = i + 1
+                        console.log("coin:", i);
+                        $("#modalbody").append(
+                            `<div id="modaldiv" class="row">
+                                <div class="col m-1">
+                                    <div class="" id="modalcard">
+                                        <div class="card card-body" id="modalcardbody">
+                                            <p id="modalcoinname" class="card-title">${coin}</p>
+                                        </div>   
+                                    </div>
+                                    <div class="">
+                                        <label class="switch modalswitch" id="chosenToggle${counter}">
+                                        <input type="checkbox" class="checkboxes" id="chosenToggle${counter}"> <span class="slider round" id="modalslider"></span>
+                                        </label>
+                                    </div> 
+                                </div>
+                                
+                            </div>`)
+                        $(`#chosenToggle${counter}`).prop('checked', true);
+                        console.log("ffgdgdgfgfdg:");
+                        $(`#chosenToggle${counter}`).on("change", () => {
+
+                            let indexCoinRemove = selectedArray.indexOf(selectedArray[i]);
+                            let ToggleTofalse = selectedSymbolArray[indexCoinRemove];
+
+                            selectedArray.splice(indexCoinRemove, 1);
+                            updateCoinSpan();
+                            selectedSymbolArray.splice(indexCoinRemove, 1);
+                            $("#keepcurrent").click();
+                            selectedArray.push(coinId);
+                            updateCoinSpan();
+                            selectedSymbolArray.push(ToggleId);
+
+                            $("#mymodal").css("display", "none");
+
+                            $(`#${ToggleTofalse}`).prop('checked', false);
+                            doubleCheckToggle()
+                        })
+                    })
+                }
+            }
+            console.log(selectedArray);
+            console.log(selectedSymbolArray);
+        }
+
+        doubleCheckToggle = () => {
+            selectedSymbolArray.map(coin => {
+                $(`#${coin}`).prop('checked', true);
+            })
+        }
+
+        updateCoinSpan = () => {
+            var checkArr = "";
+            selectedArray.map((coin, i) => {
+                if (i == (selectedArray.length - 1)) {
+                    checkArr += selectedArray[i];
+                }
+                else {
+                    checkArr += selectedArray[i] + ", ";
+                }
+                console.log("checkArr:", checkArr);
+            })
+            $("#pushArray").html(checkArr);
+        }
+        //search coin
+        searchCoin = async () => {
+            let inputValue = searchInput.value;
+            console.log("val: ", inputValue)
+            let newUrl = selectedCoinUrl + inputValue;
+            console.log("val: ", newUrl)
+
+            str = ""
+            await showCards(newUrl, 2)
+            selectedDiv.innerHTML = str
+            moveToPage("selected")
+        }
+
+        //navbar links
+        moveToPage = (idName) => {
+            console.log()
+            $('a').removeClass('active');
+            $("#" + idName).addClass('active');
+            $(".allDivs").hide(0);
+            $("#" + idName + "Div").show(100);
+
+        }
+
+        // chart code
+        $('#liveReport').on('click', (event) => {
+            createGraph("")
+            clearInterval(theInterval);
+            if (selectedSymbolArray.length == 0) {
+                console.log("bad erorr", selectedSymbolArray)
+                $("#chartContainer").html(`<div class="noneselectedmsg"> <h2>Please select up to 5 coins to display on the graph!</h2> </div>`);
+            }
+            else {
+                console.log("good else", selectedSymbolArray)
+                $(".loader").show();
+                function getData(event) {
+                    $.ajax({
+                        type: "GET",
+                        datatype: 'json',
+                        url: `https://min-api.cryptocompare.com/data/pricemulti?fsyms=${selectedSymbolArray[0]},${selectedSymbolArray[1]},${selectedSymbolArray[2]},${selectedSymbolArray[3]},${selectedSymbolArray[4]}&tsyms=USD`,
+                        success: function (result) {
+                            console.log("bad url:", result)
+                            if (result.Response == "Error") {
+                                clearInterval(theInterval);
+                                $(".loader").hide();
+                                $('#chartContainer').html(`<div class="noneselectedmsg"> <h2>No data on selected currencies - please try other coins!</h2> </div>`);
+                            }
+                            else {
+                                $('#chartContainer').html(` <div id="chartContainer1" style="height: 300px; width: 100%;"></div>`);
+                                let dateNow = new Date();
+                                let counter = 1;
+                                arrCoinRealTimeName = [];
+                                for (let key in result) {
+                                    if (counter == 1) {
+                                        arrCoinRealTime1.push({ x: dateNow, y: result[key].USD });
+                                        arrCoinRealTimeName.push(key);
+                                        console.log("arrCoinRealTime1:", arrCoinRealTime1)
+                                    }
+                                    if (counter == 2) {
+                                        arrCoinRealTime2.push({ x: dateNow, y: result[key].USD });
+                                        arrCoinRealTimeName.push(key);
+                                    }
+                                    if (counter == 3) {
+                                        arrCoinRealTime3.push({ x: dateNow, y: result[key].USD });
+                                        arrCoinRealTimeName.push(key);
+                                    }
+                                    if (counter == 4) {
+                                        arrCoinRealTime4.push({ x: dateNow, y: result[key].USD });
+                                        arrCoinRealTimeName.push(key);
+                                    }
+                                    if (counter == 5) {
+                                        arrCoinRealTime5.push({ x: dateNow, y: result[key].USD });
+                                        arrCoinRealTimeName.push(key);
+                                    }
+                                    counter++;
+                                    console.log("big arr:", arrCoinRealTimeName)
+                                }
+                                console.log("result[0]:", arrCoinRealTimeName[0])
+                                createGraph(arrCoinRealTimeName);
+                                $(".loader").hide();
+                            }
+                        }//end suceeced
+                    })//end second ajax
+                }//end getData
+
+                theInterval = setInterval(() => {
+                    getData();
+                }, 5000);
+            }
+        })
+
+        createGraph = (name) => {
+            console.log(name)
+            var options = {
+                exportEnabled: true,
+                /* animationEnabled: true */
+                title: {
+                    text: "Selected coins"
+                },
+                subtitles: [{
+                    text: "Real-time Price of Selected CryptoCurrencies in $USD"
+                }],
+                axisX: {
+                    title: "States"
+                },
+                axisY: {
+                    title: "Value in USD",
+                    titleFontColor: "#4F81BC",
+                    lineColor: "#4F81BC",
+                    labelFontColor: "#4F81BC",
+                    tickColor: "#4F81BC"
+                },
+                toolTip: {
+                    shared: true
+                },
+                legend: {
+                    cursor: "pointer",
+                    itemclick: toggleDataSeries
+                },
+                data: [{
+                    type: "line",
+                    name: name[0],
+                    showInLegend: true,
+                    xValueFormatString: "HH:MM:ss",
+                    yValueFormatString: "$#,##0",
+                    dataPoints: arrCoinRealTime1
+                },
+                {
+                    type: "line",
+                    name: name[1],
+                    showInLegend: true,
+                    xValueFormatString: "HH:MM:ss",
+                    yValueFormatString: "$#,##0",
+                    dataPoints: arrCoinRealTime2
+                },
+                {
+                    type: "line",
+                    name: name[2],
+                    showInLegend: true,
+                    xValueFormatString: "HH:MM:ss",
+                    yValueFormatString: "$#,##0",
+                    dataPoints: arrCoinRealTime3
+                },
+                {
+                    type: "line",
+                    name: name[3],
+                    showInLegend: true,
+                    xValueFormatString: "HH:MM:ss",
+                    yValueFormatString: "$#,##0",
+                    dataPoints: arrCoinRealTime4
+                },
+                {
+                    type: "line",
+                    name: name[4],
+                    showInLegend: true,
+                    xValueFormatString: "HH:MM:ss",
+                    yValueFormatString: "$#,##0",
+                    dataPoints: arrCoinRealTime5
+                }]
+            };
+            $("#chartContainer").CanvasJSChart(options);
+
+            function toggleDataSeries(e) {
+                if (typeof (e.dataSeries.visible) === "undefined" || e.dataSeries.visible) {
+                    e.dataSeries.visible = false;
+                } else {
+                    e.dataSeries.visible = true;
+                }
+                e.chart.render();
+            }
+        }
+        //about words
+        window.onload = () => {
+            strAbout = ""
+            strAbout += '<div><h1 class=""><u>About this project:</u></h1></div><br><br><br>'
+            strAbout += `<p>This is my second project for the John Bryce Full Stack Web Development class.<br> `
+            strAbout += ` - Coin of interest selection by toggle switch.<br>`
+            strAbout += `- Expandable information per coin on the homepage.<br>`
+            strAbout += `- Real time CryptoCurrency updates in graph format.<br>`
+            strAbout += `- Search Capabilities.<br>`
+            strAbout += `- 2 APIs used for information retrieval:<br>`
+            strAbout += `  + https://www.coingecko.com/api <br>`
+            strAbout += `  + https://min-api.cryptocompare.com/ <br>`
+            strAbout += `This project was created using: HTML, CSS3, JAVASCRIPT, JQUERY, AJAX, CANVAS JS & BOOTSTRAP. <br><br>`
+            strAbout += `To get started, feel free to select up to 5 coins to display in the live report. <br>`
+            strAbout += `If you would like to choose a sixth, you'll have to replace one of your currently selected coins with a new one.<br></p>`
+            strAbout += `<div><h3 class=""><u>About me:</u></h3></div><br><hr> `
+            strAbout += `<div><h5>`
+            strAbout += `<b>Name: </b>Mendy Michaeli <br>`
+            strAbout += `<b>Contact: </b>Mendym88@gmail.com <br>`
+            strAbout += `</h5></div>`
+            aboutDiv.innerHTML = (strAbout)
+        }
+
+
+    </script>
+    <script src="https://canvasjs.com/assets/script/jquery-1.11.1.min.js"></script>
+    <script src="https://canvasjs.com/assets/script/jquery.canvasjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.6/umd/popper.min.js"
+        integrity="sha384-wHAiFfRlMFy6i5SRaxvfOCifBUQy1xHdJ/yoi7FRNXMRBu5WHdZYu1hA6ZOblgut"
+        crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/js/bootstrap.min.js"
+        integrity="sha384-B0UglyR+jN6CkvvICOB2joaf5I4l3gm9GU6Hc1og6Ls7i6U/mkkaduKaBhlAXv9k"
+        crossorigin="anonymous"></script>
+
+</body>
+
+</html>
